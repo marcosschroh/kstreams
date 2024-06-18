@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-8.5.10">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-8.5.10">
     
     
       
@@ -334,7 +334,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#kstreams.prometheus.monitor.PrometheusMonitor.generate_consumer_metrics" class="md-nav__link">
+  <a href="#kstreams.PrometheusMonitor.generate_consumer_metrics" class="md-nav__link">
     generate_consumer_metrics()
   </a>
   
@@ -412,6 +412,21 @@
   
   
     <li class="md-nav__item">
+      <a href="../middleware/" class="md-nav__link">
+        Middleware
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../utils/" class="md-nav__link">
         Utils
       </a>
@@ -452,7 +467,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#kstreams.prometheus.monitor.PrometheusMonitor.generate_consumer_metrics" class="md-nav__link">
+  <a href="#kstreams.PrometheusMonitor.generate_consumer_metrics" class="md-nav__link">
     generate_consumer_metrics()
   </a>
   
@@ -516,6 +531,7 @@
 
 
 
+
 <h2 id="kstreams.PrometheusMonitor" class="doc doc-heading">
           <code>kstreams.PrometheusMonitor</code>
 
@@ -527,6 +543,9 @@
 
   
       <p>Metrics monitor to keep track of Producers and Consumers.</p>
+<p>Attributes:
+    metrics_scrape_time float: Amount of seconds that the monitor
+        will wait until next scrape iteration</p>
 
             <details class="quote">
               <summary>Source code in <code>kstreams/prometheus/monitor.py</code></summary>
@@ -742,9 +761,23 @@
 <span class="normal">226</span>
 <span class="normal">227</span>
 <span class="normal">228</span>
-<span class="normal">229</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PrometheusMonitor</span><span class="p">:</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PrometheusMonitor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Metrics monitor to keep track of Producers and Consumers.</span>
+
+<span class="sd">     Attributes:</span>
+<span class="sd">        metrics_scrape_time float: Amount of seconds that the monitor</span>
+<span class="sd">            will wait until next scrape iteration</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Producer metrics</span>
@@ -779,23 +812,26 @@
         <span class="p">[</span><span class="s2">&quot;topic&quot;</span><span class="p">,</span> <span class="s2">&quot;partition&quot;</span><span class="p">,</span> <span class="s2">&quot;consumer_group&quot;</span><span class="p">],</span>
     <span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metrics_scrape_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics_scrape_time</span> <span class="o">=</span> <span class="n">metrics_scrape_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_producer</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_streams</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_streams</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Stream</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_task</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting Prometheus metrics...&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metrics_task</span><span class="p">())</span>
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stoping Prometheus metrics...&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping Prometheus metrics...&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
 
-            <span class="c1"># we need to make sure that the task is cancelled</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># we need to make sure that the task is `done`</span>
             <span class="c1"># to clean up properly</span>
-            <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
+            <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
                 <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_clean_consumer_metrics</span><span class="p">()</span>
@@ -885,7 +921,7 @@
     <span class="k">def</span> <span class="nf">add_streams</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">streams</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_streams</span> <span class="o">=</span> <span class="n">streams</span>
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">generate_consumer_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">consumer</span><span class="p">:</span> <span class="n">ConsumerType</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">generate_consumer_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">consumer</span><span class="p">:</span> <span class="n">Consumer</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generate Consumer Metrics for Prometheus</span>
 
@@ -942,10 +978,13 @@
     <span class="k">async</span> <span class="k">def</span> <span class="nf">_metrics_task</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Asyncio Task that runs in `backgroud` to generate</span>
-<span class="sd">        consumer metrics</span>
+<span class="sd">        consumer metrics.</span>
+
+<span class="sd">        When self.running is False the task will finish and it</span>
+<span class="sd">        will be safe to stop consumers and producers.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">running</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics_scrape_time</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_streams</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">stream</span><span class="o">.</span><span class="n">consumer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
@@ -975,8 +1014,9 @@
 
 
 
-<h3 id="kstreams.prometheus.monitor.PrometheusMonitor.generate_consumer_metrics" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">generate_consumer_metrics</span><span class="p">(</span><span class="n">consumer</span><span class="p">)</span></code>
+
+<h3 id="kstreams.PrometheusMonitor.generate_consumer_metrics" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">generate_consumer_metrics</span><span class="p">(</span><span class="n">consumer</span><span class="p">)</span></code>
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-async"><code>async</code></small>
@@ -1017,14 +1057,7 @@
 </details>
           <details class="quote">
             <summary>Source code in <code>kstreams/prometheus/monitor.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">167</span>
 <span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span>
@@ -1069,7 +1102,14 @@
 <span class="normal">209</span>
 <span class="normal">210</span>
 <span class="normal">211</span>
-<span class="normal">212</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">generate_consumer_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">consumer</span><span class="p">:</span> <span class="n">ConsumerType</span><span class="p">):</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">generate_consumer_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">consumer</span><span class="p">:</span> <span class="n">Consumer</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generate Consumer Metrics for Prometheus</span>
 
@@ -1183,12 +1223,11 @@
 <div class="highlight"><pre><span></span><code><span class="n">stream_engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;my-engine&quot;</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="n">MyAppPrometheusMonitor</span><span class="p">())</span>
 
 <span class="nd">@stream_engine</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="s2">&quot;my-special-orders&quot;</span><span class="p">)</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">consume_orders_received</span><span class="p">(</span><span class="n">consumer</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">cr</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">consumer</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;NEW&quot;</span><span class="p">:</span>
-            <span class="n">stream_engine</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">increase_received</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;SHIPPED&quot;</span><span class="p">:</span>
-            <span class="n">stream_engine</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">increase_shipped</span><span class="p">()</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">consume_orders_received</span><span class="p">(</span><span class="n">cr</span><span class="p">:</span> <span class="n">ConsumerRecord</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">cr</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;NEW&quot;</span><span class="p">:</span>
+        <span class="n">stream_engine</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">increase_received</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">cr</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;SHIPPED&quot;</span><span class="p">:</span>
+        <span class="n">stream_engine</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">increase_shipped</span><span class="p">()</span>
 </code></pre></div>
 <p>Your app's prometheus would display this data, which you might utilize to build a stylish ✨dashboard✨ interface.</p>
 <p>For further details, see the <a href="https://github.com/prometheus/client">Prometheus python client</a> documentation.</p>
