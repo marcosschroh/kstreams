@@ -134,10 +134,10 @@ class ExceptionMiddleware(BaseMiddleware):
         self.stream.is_processing.release()
 
         if self.error_policy == StreamErrorPolicy.RESTART:
-            await self.stream.stop()
-            await self.stream.start()
+            await self.engine.restart_stream(self.stream)
         elif self.error_policy == StreamErrorPolicy.STOP:
-            await self.stream.stop()
+            task = self.engine.streams_to_tasks[self.stream]
+            await self.engine.stop_stream(stream=self.stream, task=task)
             # acquire `is_processing` Lock again to resume processing
             # and avoid `RuntimeError: Lock is not acquired.`
             await self.stream.is_processing.acquire()
